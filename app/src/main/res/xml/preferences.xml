@@ -1,0 +1,19 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="@string/low_tip_key"
+        android:title="Low tip percentage"
+        android:defaultValue="@string/default_low_tip"
+        android:inputType="number" />
+
+    <EditTextPreference
+        android:key="@string/medium_tip_key"
+        android:title="Normal tip percentage"
+        android:defaultValue="@string/default_medium_tip"
+        android:inputType="number" />
+
+    <EditTextPreference
+        android:key="@string/high_tip_key"
+        android:title="High tip percentage"
+        android:defaultValue="@string/default_high_tip"
+        android:inputType="number" />
+</PreferenceScreen>

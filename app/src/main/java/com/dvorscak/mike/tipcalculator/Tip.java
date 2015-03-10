@@ -1,5 +1,9 @@
 package com.dvorscak.mike.tipcalculator;
 
+import android.content.Context;
+
+import com.dvorscak.mike.preference.ApplicationSettings;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,55 +11,28 @@ import java.util.Map;
  * Created by mike on 1/24/15.
  */
 public class Tip {
-    public static final int LOW_TIP = 0;
-    public static final int NORMAL_TIP = 1;
-    public static final int HIGH_TIP = 2;
 
-    private static final Map<String, Integer> mTipMap;
+    ApplicationSettings mApplicationSettings;
+    private static final Map<String, String> mTipMap;
     static {
-        mTipMap = new HashMap<String, Integer>();
-        mTipMap.put("low", LOW_TIP);
-        mTipMap.put("normal", NORMAL_TIP);
-        mTipMap.put("high", HIGH_TIP);
+        mTipMap = new HashMap<String, String>();
+        mTipMap.put("low", ApplicationSettings.LOW_TIP);
+        mTipMap.put("normal", ApplicationSettings.MEDIUM_TIP);
+        mTipMap.put("high", ApplicationSettings.HIGH_TIP);
+    }
+    public Tip(Context context){
+        mApplicationSettings = new ApplicationSettings(context);
     }
 
-    private static double[] mTipPercentages = {
-        0.1,
-        0.15,
-        0.2
-    };
-
-    private static int getTipIndex(String tipStr) {
-        int index;
+    private String getTipSettingName(String tipStr) {
         tipStr = tipStr.toLowerCase();
-        if(mTipMap.containsKey(tipStr)) {
-            index = mTipMap.get(tipStr.toLowerCase());
-        } else {
-            // tipStr couldn't be found, default to normal
-            index = NORMAL_TIP;
-        }
-        return index;
+        return mTipMap.get(tipStr);
     }
 
-    public static double getTipPercentage(int index){
-        return mTipPercentages[index];
-    }
-
-    public static double getTipPercentage(String tipStr){
-        int tipIndex = getTipIndex(tipStr);
-        return getTipPercentage(tipIndex);
-    }
-
-    public static void setLowTip(double tip) {
-        mTipPercentages[LOW_TIP] = tip;
-    }
-
-    public static void setNormalTip(double tip) {
-        mTipPercentages[NORMAL_TIP] = tip;
-    }
-
-    public static void setHighTip(double tip) {
-        mTipPercentages[HIGH_TIP] = tip;
+    public double getTipPercentage(String tipStr){
+        String tipSettingKey = getTipSettingName(tipStr);
+        String tip = mApplicationSettings.getTipPreference(tipSettingKey);
+        return Double.parseDouble(tip) / 100;
     }
 
 }

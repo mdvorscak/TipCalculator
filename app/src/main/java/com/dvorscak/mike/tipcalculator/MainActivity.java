@@ -1,6 +1,7 @@
 package com.dvorscak.mike.tipcalculator;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Editable;
@@ -14,20 +15,21 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import java.text.NumberFormat;
+import com.dvorscak.mike.preference.SettingsActivity;
 
 
-public class MainActivity extends Activity implements AdapterView.OnItemSelectedListener{
+public class MainActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
     public static final String TAG = MainActivity.class.getSimpleName();
-    private EditText mCost;
-    private EditText mTip;
-    private String serviceLevelSpinnerText;
+    private EditText mCostField;
+    private EditText mTipField;
+    private String mServiceLevelSpinnerText;
+    private Tip mTip;
 
     public void onItemSelected(AdapterView<?> parent, View view,
                                int pos, long id) {
         // An item was selected. You can retrieve the selected item using
-        serviceLevelSpinnerText = parent.getItemAtPosition(pos).toString();
+        mServiceLevelSpinnerText = parent.getItemAtPosition(pos).toString();
         setTip();
     }
 
@@ -35,69 +37,21 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
         // Another interface callback
     }
 
-    private double currencyStringToDouble(String currencyString) {
-        String cleanString = currencyString.replaceAll("[$,.]", "");
-        if(!cleanString.equals("")) {
-            return Double.parseDouble(cleanString);
-        }
-        return 0.0;
-    }
-
-    private void setCurrencyField(EditText field, double amount, boolean selectable, String current) {
-        String formatted = NumberFormat.getCurrencyInstance().format((amount / 100));
-
-        if(amount != 0.0) {
-            current = formatted;
-            field.setText(formatted);
-            if(selectable) {
-                field.setSelection(formatted.length());
-            }
-        } else {
-            //Show hint when we get back to zero
-            current = "";
-            field.setText("");
-        }
-    }
-
-    private void setCurrencyField(EditText field, double amount, boolean selectable) {
-        setCurrencyField(field, amount, selectable, "");
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG, "starting");
+        mTip = new Tip(this);
 
-        mTip = (EditText) findViewById(R.id.tipEditText);
+        Log.d(TAG, getString(R.string.test));
+
+        mTipField = (EditText) findViewById(R.id.tipEditText);
 
         //Cost field
-        mCost = (EditText) findViewById(R.id.costEditText);
-        mCost.setRawInputType(Configuration.KEYBOARD_12KEY);
-        mCost.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int i, int i2, int i3) {
-            }
+        mCostField = (EditText) findViewById(R.id.costEditText);
+        mCostField.setRawInputType(Configuration.KEYBOARD_12KEY);
 
-            private String current = "";
-            @Override
-            public void onTextChanged(CharSequence text, int i, int i2, int i3) {
-                if(!text.toString().equals(current)){
-                    mCost.removeTextChangedListener(this);
-                    double parsed = currencyStringToDouble(text.toString());
-                    setCurrencyField(mCost, parsed, true, current);
-
-                    mCost.addTextChangedListener(this);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                //TODO:Run the calculation if you can
-                setTip();
-            }
-        });
 
         //Set all the dropdown stuff
         Spinner levelOfService = (Spinner) findViewById(R.id.serviceLevelSpinner);
@@ -106,14 +60,39 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
 
         levelOfService.setAdapter(adapter);
 
+        //set the default level
+        int normalServicePos = adapter.getPosition("Normal");
+        levelOfService.setSelection(normalServicePos);
+
         levelOfService.setOnItemSelectedListener(this);
+
+        mCostField.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int i, int i2, int i3) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence text, int i, int i2, int i3) {
+                String textStr = text.toString();
+                if (!textStr.equals("")) {
+                    mCostField.removeTextChangedListener(this);
+                    Currency.setCurrencyField(mCostField, textStr, true);
+                    mCostField.addTextChangedListener(this);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                setTip();
+            }
+        });
     }
 
     private void setTip() {
         Log.d(TAG, "setting tip");
-        double cost = currencyStringToDouble(mCost.getText().toString());
-        double tipAmount = Tip.getTipPercentage(serviceLevelSpinnerText) * cost;
-        setCurrencyField(mTip, tipAmount, false);
+        double cost = Currency.toDouble(mCostField.getText().toString());
+        double tipAmount = mTip.getTipPercentage(mServiceLevelSpinnerText) * cost;
+        Currency.setCurrencyField(mTipField, tipAmount, false);
     }
 
     @Override
@@ -129,7 +108,9 @@ public class MainActivity extends Activity implements AdapterView.OnItemSelected
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.settings_action) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
